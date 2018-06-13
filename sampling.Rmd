@@ -1,0 +1,56 @@
+---
+title: "test"
+author: "amek"
+date: "14 Maret 2018"
+output:
+  html_document: default
+  word_document: default
+---
+## Inisial
+Bagian ini adalah untuk melakukan inisiasi data bangkitan distribusi normal dengan jumlah data 10k, rata-rata 50 dan varians 5
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+populasi<-rnorm(10000,50,sqrt(5))
+sampling <- function(population,size,number){
+  sampel<- matrix(ncol = size,nrow = number)
+  sample_mean<- matrix(ncol = size,nrow = 1)
+  sample_var<- matrix(ncol = size,nrow = 1)
+  ci <- matrix(ncol = 2, nrow = size)
+  non_equivalen<-matrix(ncol=2)
+  for(i in 1:size){
+    sampel[,i]<-sample(x = population,size = number)
+    sample_mean[,i]<- sum(sampel[,i])/nrow(sampel)
+    sample_var[,i]<- var(sampel[,i])
+    ci[i,1]<- sample_mean[,i]-(1.96*sqrt(var(sampel[,i])/nrow(sampel)))
+    ci[i,2]<- sample_mean[,i]+(1.96*sqrt(var(sampel[,i])/nrow(sampel))) 
+  }
+  #print(sample_var)
+  cat("Sampel yang rata-ratanya tidak mengikuti rata-rata populasi yaitu sampel ke-")
+  for (i in 1:size){
+    if ((ci[i,1]>50) || (ci[i,2]<50)){
+      non_equivalen<-rbind(non_equivalen,ci[i,])
+        if(i<size){
+        cat(i,", ")
+      } else {
+        cat(i)
+      }
+    }
+    
+  }
+  cat("\n")
+  non_equivalen<-non_equivalen[-c(1),]
+  cat("jumlahnya : ",nrow(non_equivalen),"\n")
+  colnames(non_equivalen)<-c("Batas bawah","Batas atas")
+  print(non_equivalen)
+  print(mean(sample_mean))
+  plot(density(sample_mean))
+}
+```
+
+
+##SAMPLING
+
+```{r sampling_normal, echo=TRUE}
+sampling(populasi,size = 100,number = 100)
+```
