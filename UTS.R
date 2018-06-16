@@ -106,3 +106,4 @@ data2
 
 owManova(data2)
 summary(manova(rbind(bln0,bln1,bln2)~factor(rep(1:3,c(4,4,4)))),test="Wilks")
+

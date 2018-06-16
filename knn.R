@@ -16,10 +16,13 @@ size <- sample(size,replace = T)
 test.set <- data.frame(cbind(heights,weights,size))
 
 library(knncat)
-shirtcat<-knncat(train.set,classcol = 3)
+shirtcat<-knncat(test.set,classcol = 3)
 
-shirtpred <- predict(shirtcat,train.set,test.set,train.classcol = 3,newdata.classcol = 3)
+shirtcat$misclass.mat
+
+shirtpred <- predict(shirtcat,test.set,train.set,train.classcol = 3,newdata.classcol = 3)
 
 table(shirtpred,test.set$size)
 
-knncat(train.set,test.set,classcol = 3)
+fool <- knncat(train.set,train.set,classcol = 3)
+table(test.set$size,test.set$size)

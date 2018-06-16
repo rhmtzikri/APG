@@ -105,7 +105,7 @@ boxm.test(data_manova,pelumas)
 boxM(data_manova[-c(1,2)],pelumas)
 
 ##fungsi manova 2 arah
-manova.uji <- function(data,alpha=0.05){
+two.manova <- function(data,alpha=0.05){
   ktgr<-which(sapply(data, class)=="factor")
   
   levela<-as.factor(levels(data[,ktgr[2]]))
@@ -238,8 +238,8 @@ manova.uji <- function(data,alpha=0.05){
   #print(noquote(fManova))
   
   
-  return(list("summary" = noquote(fManova), "error" = noquote(E),"wilks" = A,"HA" = noquote(HA),"HB" = noquote(HB),
-              "HAB" = noquote(HAB)))
+  return(list("summary" = noquote(fManova), "wilks" = A,"HA" = noquote(HA),"HB" = noquote(HB),
+              "HAB" = noquote(HAB),"error" = noquote(E)))
 }
 
 
@@ -263,8 +263,8 @@ summary(manova(cbind(y1,y2,y3)~velocity*pelumas),test = "Wilks")
 
 x1<-rnorm(80,4,3.282)
 x2<-rnorm(80,28.4,50.39)
-cat1<-rep(c("Reguler","VIP","SVIP","VVIP"), each="20")
-cat2<-rep(c("SS","S","TS","STS"),each="5",times="4")          
+cat1<-as.factor(rep(c("Reguler","VIP","SVIP","VVIP"), each="20"))
+cat2<-as.factor(rep(c("SS","S","TS","STS"),each="5",times="4"))          
 data<-data.frame(cat2,cat1,x1,x2)
 
 
