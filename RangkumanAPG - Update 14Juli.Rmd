@@ -1,0 +1,807 @@
+---
+title: "TUGAS UAS APG"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## T Hotelling
+<p align='justify'>Tidak semua data yang diterekam memiliki kenormalan dan kepastian. Oleh karena itu untuk menguji dan mendapatkan informasi dengan metode yang tepat dari sebuah data, diperlukan uji kenormalan untuk melihat apakah data tersebut berdistribusi normal atau tidak. Selain melihat kenormalan suatu data, diperlukan informasi dasar dari sebuah data yang meliputi pemusatan dan penyebaran data atau biasa dirangkum dalam statistika deskriptif. Untuk menguji apakah rata-rata yang sampel yang ada pada data dapat merepresentasikan rata-rata pada data populasi maka untuk mengujinya digunakan T2 Hotelling.</p> 
+
+<p align='justify'>Dalam script R ini, kami membagi kondisi pemakaian T-Hotelling menjadi dua, dimana asumsi data bersifat independen dan asumsi data bersifat dependen, seperti dibawah ini:</p>
+```{r}
+#mean
+rerata<- function(data){
+  jumlah<-0
+  for (i in 1:length(data)){
+    jumlah<-jumlah+data[i]
+  }
+  rata<-jumlah/length(data)
+  return(rata)
+}
+#var dan cov
+covar <- function(data){
+  sig = 0
+  n<-NULL
+  covm <- NULL
+  if(is.vector(data)){
+    n<-1
+    for (k in 1:length(data)){
+      sig <- sig + (data[k]-rerata(data))^2
+    }
+    corgm <- sig/(length(data)-1)
+    var<-cbind(covm,corgm)
+    return(var)
+  }
+  else {
+    n<-ncol(data)
+    for (i in 1:n){
+      for (j in 1:n){
+        sig<-0
+        rata1<-rerata(data[,i])
+        rata2<-rerata(data[,j])
+        
+        for (k in 1:length(data[,j])){
+          sig <- sig + (data[k,i]-rata1)*(data[k,j]-rata2)
+        }
+        corgm <- sig/(length(data[,i])-1)
+        covm<-cbind(covm,corgm)
+      }
+    }
+    covm<-matrix(covm,ncol=ncol(data))
+    return(covm)
+  }
+}
+
+## T Hotteling
+# 1: Dependen
+# 0: Independen
+tHot_test<-function(a, b, alpha=0.05, type=0){
+  if (type==0)
+	{
+	  na<-nrow(a)
+	  nb<-nrow(b)
+	  y1bar<-NULL
+	  y2bar<-NULL
+	  for(j in 1:ncol(a)){
+		y1bar<-c(y1bar,rerata(a[,j]))
+		y2bar<-c(y2bar,rerata(b[,j]))
+	  }
+	  y1bar<-matrix(y1bar)
+	  y2bar<-matrix(y2bar)
+	  cov1<-covar(a)
+	  cov2<-covar(b)
+	  spl<-1/(na+nb-2)*((na-1)*cov1+(nb-1)*cov2)
+	  selisih<-matrix(y1bar-y2bar)
+	  Tsqr<-((na*nb)/(na+nb))*t(selisih)%*%solve(spl)%*%selisih
+	  dKritis<- ((((nrow(a)+nrow(b))*ncol(a))/(nrow(a)+nrow(b)-ncol(a)-1))*qf(1-alpha,ncol(a),nrow(a)+nrow(b)-ncol(a)-1))
+	  
+	  #Print hasil uji
+	  cat("\n UJI MULTIVARIAT DUA POPULASI INDEPENDEN \n")
+	  cat("=====================================\n")
+	  cat("H0: miu1 = miu2\n")
+	  cat("H1: miu1 <> miu2\n")
+	  cat("\n Nilai T2 Hitung : ", Tsqr, "\n")
+	  cat(" Nilai F Tabel   : ", dKritis,"\n")
+
+	  if(Tsqr<dKritis){  
+		v<-(" Keputusan: Gagal Tolak H0")
+		z<-c("Dengan tingkat signifikansi ",alpha,"  tidak terdapat cukup bukti untuk menolak H0.")
+	  } else {
+		v<- (" Keputusan: Tolak H0")
+		z<-c("Dengan tingkat signifikansi ",alpha,"  terdapat cukup bukti untuk menolak H0.")
+	  }
+	  cat(v,"\n")
+	  cat("\n",z,"\n")  
+	 
+	} else if (type==1) {
+	  dif<-NULL
+	  for(i in 1:ncol(a)){
+		dif<- c(dif,a[,i]-b[,i])
+	  }
+	  D<-matrix(dif,ncol=ncol(a))
+	  dbar<-NULL
+	  for(j in 1:ncol(a)){
+		dbar<-c(dbar,rerata(D[,j]))
+	  }
+	  dbar<-matrix(dbar)
+	  sd <- covar(D)
+	  n<-nrow(a)
+	  t<-n%*%t(dbar)%*%solve(sd)%*%dbar 
+	  dKritis<- ((ncol(a)*(nrow(a)-1))/(nrow(a)-ncol(a)))*qf(1-alpha,ncol(a),nrow(a)-ncol(a))
+	  
+	  # cat("\n Matriks D: \n")
+	  # print(D)
+	  # cat("\n Matrix Dbar: \n")
+	  # print(dbar)
+	  # cat("\n Matrix Sd: \n")
+	  # print(sd)
+	  
+	  #Print hasil Uji
+	  cat("\n UJI MULTIVARIAT DUA POPULASI DEPENDEN \n")
+	  cat("=====================================\n")
+	  cat("H0: miu1 = miu2\n")
+	  cat("H1: miu1 <> miu2\n")
+	  cat("\n Nilai T2 Hitung : ", t, "\n")
+	  cat(" Nilai F tabel: ", dKritis,"\n")
+	  
+	  if(t<dKritis){  
+		v<-(" Keputusan: Gagal Tolak H0")
+		z<-c("Dengan tingkat signifikansi ",alpha,"  tidak terdapat cukup bukti untuk menolak H0.")
+	  } else {
+		v<- (" Keputusan: Tolak H0")
+		z<-c("Dengan tingkat signifikansi ",alpha,"  terdapat cukup bukti untuk menolak H0.")
+	  }
+	  cat(v,"\n")
+	  cat("\n",z,"\n")  
+	  
+	} else {
+	  cat("fatal in choose type")
+	  cat("type is 1/0")
+	  cat("	1 for dependen and")
+	  cat(" 0 for independen")
+	  
+	}
+}
+```
+<p>Test Function :</p>
+<p align='justify'>Untuk menguji fungsi yang sudah dibuat maka dilakukan pemanggilan fungsi dengan dataset sebagai berikut:</p>
+
+<p align='justify'>Dataset terdiri dari 15 entri (siswa) dimana masing-masing menulis sebuah esay formal dan informal (kramer 1972,p.100). Variabel-variabel yang dicatat merupakan jumlah kata (words) dan jumlah kata kerja (verbs) pada esay yang ditulis. Dataset tersebut didapatkan dari slide Analisis Peubah Ganda pertemuan 6 (Pertemuan 6.pdf).</p>
+<ol>
+<li>y1  = banyaknya kata (Word) pada esay informal</li>
+<li>y2  = banyaknya kata kerja (Verb) pada esay informal</li>
+<li>x1  = banyaknya kata (Word) pada esay formal</li>
+<li>x2  = banyaknya kata kerja (Verb) pada esay formal</li>
+</ol>
+```{r}
+#Input data
+informal<-matrix(c(148, 20, 159, 24, 144, 19, 103, 18, 121, 17, 89,  11, 119, 17, 123, 13, 76, 16, 217, 29, 148, 22, 151, 21, 83,  7, 135, 20, 178, 15),ncol=2, byrow=TRUE)
+
+formal<-matrix(c(137,15, 164, 25, 224, 27, 208, 33, 178, 24, 128, 20, 154, 18, 158, 16, 102, 21, 214, 25, 209, 24, 151, 16, 123, 13, 161, 22, 175, 23), ncol=2, byrow=TRUE)
+
+colnames(formal)<-c("x1","x2")
+colnames(informal)<-c("y1","y2")
+print(as.matrix(formal),row.names=F)
+print(as.matrix(informal), row.names=F)
+
+konvensional<-matrix(c(45, 40, 24,
+                       52, 64, 67,
+                       57, 42, 40,
+                       63, 45, 54,
+                       42, 34, 41,
+                       71, 79, 43,
+                       65, 38, 52,
+                       60, 34, 57),ncol=3, byrow=TRUE)
+
+interaktif<-matrix(c(76, 60, 50,
+                     80, 50, 70,
+                     65, 62, 53,
+                     70, 60, 51,
+                     78, 48, 59,
+                     90, 79, 68,
+                     78, 58, 50,
+                     95, 50, 50),ncol=3, byrow=TRUE)
+
+colnames(formal)<-c("x1","x2")
+colnames(informal)<-c("y1","y2")
+print(as.matrix(konvensional),row.names=F)
+print(as.matrix(interaktif), row.names=F)
+
+#jalanin fungsi
+#implementasi dataset konvensional dan interaktif
+tHot_test(konvensional,interaktif)
+#implementasi fungsi tsq_dep terhadap data informal dan formal
+tHot_test(informal,formal)
+```
+<p align="justify">Dilakukan pemanggilan fungsi hotelling.test untuk akhirnya dibandingkan dengan hasil pada fungsi yang sebelumnya dibuat.</p>
+```{r}
+## T Hotelling Pacage ##
+library(Hotelling)
+hasil<-hotelling.test(informal,formal)
+hasil$stats$statistic
+```
+Dengan membandingkan output dari fungsi package dengan fungsi yang telah dibuat dapat dilihat bahwa keduanya memiliki hasil yang sama. 
+
+## MANOVA
+
+MANOVA adalah perluasan multivariate dari analisis ANOVA. MANOVA merupakan metode statistik untuk mengeksplorasi hubungan diantara beberapa variable independen yang berjenis kategorikal (bisa data nominal atau ordinal) dengan beberapa variable dependen yang berjenis metric (bisa data interval atau rasio).
+
+Tujuan MANOVA yaitu untuk mengetahui apakah ada perbedaan yang nyata pada variable-variabel dependen antar-anggota sebuah grup (variable independen).
+
+Metode ANOVA dan MANOVA memiliki konsep yang sama yaitu untuk menganalisis perbedaaan rata-rata secara serempak antara dua kelompok atau lebih dan menganalisis hubungan atau pengaruh variabel independen terhadap variable dependen. Perbedaannya terletak pada jumah variable dependentnya.
+
+Untuk menggunakan metode manova, terdapat beberapa asumsi yang harus terpenuhi yaitu sebagai berikut :
+
+  1.  Adanya independensi antar-anggota grup. Sebagai contoh respon antar grup responden seharusnya tidak berkorelasi.
+  2.  Linearitas yaitu hubungan yang linear diantara seluruh pasangan varaibel dependen.
+  3.  Adanya kesamaan matriks kovarians antar group pada variable dependent (Homogeneity of covariance matrices)
+  4.  Variable-variabel dependen seharusnya berdistribusi normal. Karena pada MANOVA jumlah variable dependen lebih dari satu, maka pengukuran normalitas adalah untuk multivariate. Karena pengukuran normalitas untuk multivariat sulit dilakukan, maka bisa diasumsikan bahwa jika masing-masing variable dependen sudah berdistribusi normal atau mendekati normal, maka kumpulan variable dependen juga dianggap akan berdistribusi normal.
+  5.  Antar-variabel dependen seharusnya tidak terjadi korelasi yang kuat (multikolinearitas).
+  6.  MANOVA cukup sensitive terhadap keberadaan data yang bernilai sangat ekstrem (outlier). Karena itu, data terlebih dahulu perlu dideteksi apakah mengandung outlier atau tidak.
+  
+  Selanjutnya dalam tugas ini, kami tertarik untuk menguji, apakah ada perbedaan yang signifikan antara pengeluaran per tahun dan tabungan dalam setahun terakhir dari masyarakat Provinsi Bengkulu berdasarkan jumlah anggota rumah tangga (ART) dan pendapatan selama setahun terakhir dari data PKL 57.
+  
+```{r data}
+## Import data kedalam R
+library(sos)
+library(xlsx)
+# Input file
+data.apg <- as.data.frame(read.xlsx("D:/KEL_VILDA.xlsx",1))
+data.apg <- subset(data.apg, tabungan!=0 & pendapatan>0)
+
+####=============================================================================####
+
+####                             Filtering Data                                  ####
+
+#kita buat matrix kosong berukuran 1 x banyak data yang bersisi kategori
+fa<-matrix(data = 0, nrow = nrow(data.apg)) # untuk art
+fb<-matrix(data = 0, nrow = nrow(data.apg)) # untuk pendapatan
+
+#disini kami membagi jumlah art menjadi 3 kategori 
+#kurang dari 3 (<3)
+#3 sampai 5 (>=3 && <=5)
+#lebih dari 5 (>5)
+for(i in 1 : nrow(fa)){
+  if(data.apg$art[i]<3){
+    fa[i]<-"A1"
+  }else if(data.apg$art[i]>=3 && data.apg$art[i]<=5){
+    fa[i]<-"A2"
+  }else
+    fa[i]<-"A3"
+}
+
+#selanjutnya kami juga membagi pendapatan pertahun menjadi 3 kategori
+#kurang dari Rp30.000.000,-
+#Rp30.000.000,- sampai Rp80.000.000,-
+#lebih dari Rp80.000.000,-
+for(i in 1 : nrow(fb)){
+  if(data.apg$pendapatan[i]==0 || data.apg$pendapatan[i]<30000000){
+    fb[i]<-"B1"
+  }else if(data.apg$pendapatan[i]>=30000000 && data.apg$pendapatan[i]<=80000000){
+    fb[i]<-"B2"
+  }else
+    fb[i]<-"B3"
+}
+
+#kita buat tabel baru berisi fa,fb,pengeluaran,tabungan
+pnd<-matrix(data = 0, nrow = nrow(data.apg))
+tab<-matrix(data = 0, nrow = nrow(data.apg))
+
+data.anl <- as.data.frame(cbind(fa,fb,pnd,tab))
+
+data.anl$V1<-as.factor(data.anl$V1)
+data.anl$V2<-as.factor(data.anl$V2)
+data.anl$V3<-as.numeric(data.apg$pengeluaran)
+data.anl$V4<-as.numeric(data.apg$tabungan)
+
+data<-data.frame(data.anl$V3,data.anl$V4)
+```
+
+  1. Uji Asumsi
+     Sebelum berlanjut pada analisisnya, terdapat beberapa asumsi yang harus dipenuhi terlebih dahulu :
+        a. Independensi antara anggota grup
+        b. Kesamaan matriks kovarians antara grup (Homogenitas)
+        c. Normalitas pada variabel dependen
+        d. Multikolinieritas variabel dependen
+        e. Outlier
+
+     a. Uji Independensi
+        Dalam kasus ini data berasal dari data PKL 57 di Provinsi bengkulu. Data yang di ambil secara random dari populasi penduduk bengkulu dan saling lepas. Sehingga data ini dapat diasumsikan independen.
+        
+     b. Uji Homogenitas
+        Untuk menguji homogenitas dapat dilakukan dengan uji Box M,
+
+```{r BoxM}
+####                               Fungsi BoxM                                 ####
+
+
+boxm_test <- function(X, groups) {
+  if (!inherits(X, "matrix") && !inherits(X, "data.frame")) {
+    stop("X must be a numeric matrix or data frame")
+  }
+  if (!is.factor(groups)) {
+    stop("groups must be a factor")
+  }
+  if (length(groups) != nrow(X)) {
+    stop("groups must have length equal to the number of rows in X")
+  }
+  if (nlevels(groups) < 2) {
+    stop("groups has fewer than 2 levels")
+  }
+  
+  N <- NROW(X)
+  p <- NCOL(X)
+  
+  n <- table(groups)
+  nl <- as.list(setNames(n, levels(groups)))
+  
+  g <- nlevels(groups)
+  Ng <- N - g
+  
+  Si <- lapply(levels(groups), function(i) cov(X[groups == i, ]))
+  Sp <- Reduce("+", lapply(1:g, function(i) (nl[[i]] - 1) * Si[[i]])) / Ng
+  
+  u <- (sum(1/(n-1))-1/Ng)*((2*p^2+3*p-1)/(6*(p+1)*(g - 1)))
+  M <- Ng*log(det(Sp))-sum((n-1)*sapply(Si,function(x) log(det(x))))
+  
+  df <- as.integer((p*(p+1)*(g-1))%/%2)
+  
+  if (p <= 5 && g <= 5) {
+    stat <- (1 - u) * M
+    return(list(statistic = stat,
+                df= df,
+                pvalue = pchisq(stat, df, lower.tail = FALSE)))
+  } else {
+    a <- (sum(1/(n-1)^2)-1/Ng^2)*(p^2+p-2)/(6*(g-1))
+    df2 <- as.integer((df+2)/abs(a-u^2))
+    
+    if (a > u^2) {  
+      b <- df / (1-u-df/df2)
+      stat <- M/b
+    } else {        
+      b <- df / (1-u-2/df2)
+      stat <- df2*M/(df*(b-M))
+    }
+    X2 <- M * (1 - u)
+    dfchi <- (choose(p, 2) + p) * (g - 1)
+    pval <- pchisq(X2, dfchi, lower.tail = FALSE)
+    out<-structure(list((statistic = c(`Chi-Sq (approx.)` = X2)),
+                         parameter = c(df = dfchi), 
+                         p.value = pval))
+    # return(list(statistic = stat, df = c(df, df2), pvalue = pval))
+                  #pchisq(stat, df, df2, lower.tail = FALSE)))
+    return(out)
+  }
+}
+
+####                             Run BoxM                        ####
+
+cat("ART\n")
+boxm_test(X=data,groups=data.anl$V1)
+cat("Pendapatan\n")
+boxm_test(X=data,groups=data.anl$V2)
+
+```
+```{r packageboxm}
+####                             Package Biotools: BoxM          ####
+
+library(biotools)
+cat("ART\n")
+biotools::boxM(data,data.anl$V1)
+cat("Pengeluaran\n")
+biotools::boxM(data,data.anl$V2)
+``` 
+ 
+     c. Uji Normalitas pada Variabel Dependen
+        Untuk menguji normalitas variabel dependen ini kami menggunakan pacage di R, yaitu mvnnormtest,
+
+```{r Normalitas}
+library(mvnormtest)
+mvnormtest::mshapiro.test(t(data))
+plot(density(data$data.anl.V3))
+plot(density(data$data.anl.V4))
+
+```
+Dapat dilihat bahwa, baik data pengeluaran maupun tabungan tidak ada yang bedistribusi normal multivariat.
+
+     d. Uji Multikolinearitas
+        Sebelum melakukan uji MANOVA sebelumnya harus diteliti korelasi antar-variabel independen. Seharusnya antar-variabel independen tidak terjadi korelasi. Untuk mengujinya dapat digunakan dengan VIF (Variance Inflation Factor).
+     
+```{r}
+cor(data.apg$pendapatan,data.apg$art)
+```
+     e. Uji Outlier
+        Untuk melihat adanya data outlier dari sata dapat digunakan box plot,
+        
+```{r}
+options(scipen=999)
+boxplot(V3~V1+V2,data = data.anl, 
+        main = "Pengeluaran per Kelompok jumlah ART dan Kelompok pendapatan", 
+        ylab = "Pengeluaran pertahun")
+boxplot(V4~V1+V2,data = data.anl, 
+        main = "tabungan per Kelompok jumlah ART dan Kelompok pendapatan",
+        ylab = "tabungan pertahun")
+```
+Dapat dilihat dari kedua data (pengeluaran/V3 maupun tabungan/V4) banyak mengandung outlier
+
+Meskipun dari semua asumsi terlanggar, namun kami akan tetap melakukan uji manova kepada data tersebut.
+
+Selanjutnya dilakukan uji MANOVA,
+```{r}
+####                           Fungsi Manova 2 Arah             ####
+
+m.anova2<-function(x=data.frame(x), alpha=numeric(alpha)){
+  data<-x # memasukkan data
+  alpha<-alpha # memasukkan nilai alpha
+  ktgr<-which(sapply(data, class)=="factor") # mencari kategori dengan melihat mana saja dari data input yang bernilai sbg "faktor"
+  
+  # mengcek jumlah kategori agar dapat dikakukan manova 2 arah
+  # jika kurang dari 2 maka bukan 2 arah sehingga STOP
+  try(
+    if(length(ktgr)>=1){
+      a=ktgr[1]  
+      b=ktgr[2]
+    }
+    else{
+      stop("Faktor <2 atau tidak ada !")
+    })
+  
+  
+  # mencari banyak kolom yang merupakan data dari inputan 
+  p<-length(which(sapply(data, class)!="factor"))
+  
+  # memecah data berdasarkan kategori yang ada dan dibuat vektor grup
+  levela<-as.factor(levels(data[,ktgr[1]])) # mencari nilai pada kategori 1
+  levelb<-as.factor(levels(data[,ktgr[2]])) # mencari nilai pada kategori 2
+  
+  datavar=data[-ktgr] # membuat dataset baru tanpa adanya faktor 
+  grup1=split(datavar,data[,ktgr[1]]) # mengelompokkan data brdsr ktgr 1
+  grup2=split(datavar,data[,ktgr[2]]) # mengelompokkan data brdsr ktgr 2
+  grup3=split(datavar,data[,ktgr])
+  
+  a<-length(levela) # menghitung banyak kategori faktor a
+  b<-length(levelb) # menghitung banyak kategori faktor b
+  
+  n.temp<-aggregate(datavar[,1] ~ data[,ktgr[1]]+data[,ktgr[2]], data=data, length) # mencari jumlah data pada tiap kombinasi faktor 
+  n<-matrix(n.temp[,ncol(n.temp)],nrow=1) # membuat matriknya
+  
+  n.temp<-aggregate(datavar[,1] ~ data[,ktgr[1]], data=data, length)
+  
+  #mean perlakuan
+  mean.ha<-sapply(grup1, function(x){apply(x,2,mean)})
+  mean.hb<-sapply(grup2, function(x){apply(x,2,mean)})
+  mean.hab<-sapply(grup3, function(x){apply(x,2,mean)})
+  
+  
+  #replikasi untuk pengurangan terhadap mean interaksi
+  mean.h.arep<-mean.ha[,rep(seq(ncol(mean.ha)),b)]
+  mean.h.brep<-mean.hb[,rep(colnames(mean.hb),each=a)]
+  
+  mean.temp.total<-t(colMeans(datavar))
+  mean.total<-t(mean.temp.total[rep(seq(nrow(mean.temp.total)),a*b),])
+  
+  
+  #mean perlakuan - mean menyeluruh
+  mean.diffa<-apply(mean.ha,2,function(x){(x-apply(datavar,2,mean))})
+  mean.diffb<-apply(mean.hb,2,function(x){(x-apply(datavar,2,mean))})
+  mean.diffab<-mean.hab-mean.h.arep-mean.h.brep+mean.total
+  
+  #(2) mean(1) kuadrat
+  H.temp.a<-apply(mean.diffa,2,function(x){x%*%t(x)})
+  H.temp.b<-apply(mean.diffb,2,function(x){x%*%t(x)})
+  H.temp.ab<-apply(mean.diffab,2,function(x){x%*%t(x)})
+  
+  #(2) dikali vektor n per perlakuan, didapat 
+  #jumlah x skalar, lalu dijadikan matriks Ha(p x p) dan Hb(p x p)
+  Ha<-matrix(H.temp.a%*%matrix(n,a,a)*b,p,p)
+  Hb<-matrix(H.temp.b%*%matrix(n,b,b)*a,p,p)
+  Hab<-matrix(H.temp.ab%*%matrix(n,a*b,a*b),p,p)
+  
+  #derajat bebas perlakuan dan eror
+  vha=a-1
+  vhb=b-1
+  vhab=vha*vhb
+  ve<-sum(n)-a*b
+  
+  #Direplikasi berdasarkan jumlah observasi per interaksi
+  mean.hab.temp=(t(mean.hab)[rep(seq(nrow(t(mean.hab))),n),])
+  #diurutkan brdsrkn faktor prtma agar sesuai sblm dikurang data awal->mean.diff2
+  mean.hab.temp=mean.hab.temp[order(row.names(mean.hab.temp)),]
+  
+  #data observ. kurang mean interaksi
+  mean.diff2=data.frame(cbind((datavar-mean.hab.temp),data[,ktgr]))
+  
+  #dibagi berdasarkan perlakuan
+  grup.E<-split(mean.diff2[,ktgr], mean.diff2[,-ktgr])
+  #dikuadratkan, lalu dijumlah sampai length(level) perlakuan
+  E.temp<-rowSums(sapply(grup.E, function(x){as.matrix(t(x))%*%as.matrix(x)}))
+  #bentuk matriks E(p x p)
+  E<-matrix(E.temp,p,p)
+  
+  #(3)Wilks Lambda A dan Nilai F Aproksimasi
+  wilksa<-det(E)/det(E+Ha)#sampai sini
+  if(vha==1){
+    Fhitwilksa<-(((1-wilksa)/wilksa)*((ve-p+1)/p))
+    df1a<-p
+    df2a<-ve-p+1
+  }else{
+    wa<-ve+vha-0.5*(p+vha+1)
+    ta<-sqrt((p^2*vha^2-4)/(p^2+vha^2-5))
+    df1a<-p*vha
+    df2a<-wa*ta-0.5*(p*vha-2)
+    Fhitwilksa<-((1-wilksa^(1/ta))/(wilksa^(1/ta)))*(df2a/df1a)}
+  pvaluewilksa<-1-pf(Fhitwilksa,df1a,df2a)
+  
+  #(4)Wilks Lambda B
+  wilksb<-det(E)/det(E+Hb)
+  if(vhb==1){
+    Fhitwilksb<-(((1-wilksb)/wilksb)*((ve-p+1)/p))
+    df1b<-p
+    df2b<-ve-p+1
+  }else{
+    wb<-ve+vhb-0.5*(p+vhb+1)
+    tb<-sqrt((p^2*vhb^2-4)/(p^2+vhb^2-5))
+    df1b<-p*vhb
+    df2b<-wb*tb-0.5*(p*vhb-2)
+    Fhitwilksb<-((1-wilksb^(1/tb))/(wilksb^(1/tb)))*(df2b/df1b)}
+  pvaluewilksb<-1-pf(Fhitwilksb,df1b,df2b)
+  
+  #(5)Wilks Lambda Interaksi
+  wilksab<-det(E)/det(E+Hab)
+  if(vhab==1){
+    Fhitwilksab<-(((1-wilksab)/wilksab)*((ve-p+1)/p))
+    df1ab<-p
+    df2ab<-ve-p+1
+  }else{
+    wab<-ve+vhab-0.5*(p+vhab+1)
+    tab<-sqrt((p^2*vhab^2-4)/(p^2+vhab^2-5))
+    df1ab<-p*vhab
+    df2ab<-wab*tab-0.5*(p*vhab-2)
+    Fhitwilksab<-((1-wilksab^(1/tab))/(wilksab^(1/tab)))*(df2ab/df1ab)}
+  pvaluewilksab<-1-pf(Fhitwilksab,df1ab,df2ab)
+  
+  #tabel Wilks Lambda
+  wilkslambda=data.frame(cbind(wilksa,wilksb,wilksab))
+  
+  #FTable
+  Ftaba<-qf(1-alpha,df1a,df2a)
+  Ftabb<-qf(1-alpha,df1b,df2b)
+  Ftabab<-qf(1-alpha,df1ab,df2ab)
+  
+  cat("\nFaktor A")
+  cat("\nSum of Squares and Product Matrix faktor A\n")
+  print(Ha)
+  cat("Df Faktor A")
+  print(vha)
+  
+  cat("\n\nFaktor B")
+  cat("\nSum of Squares and Product Matrix faktor B\n" )
+  print(Hb)
+  cat("DF Faktor B")
+  print(vhb)
+  
+  cat("\n\nFaktor AB")
+  cat("\nSum of Squares and Product Matrix faktor AB\n" )
+  print(Hab)
+  cat("Df Faktor AB")
+  print(vhab)
+  
+  cat("\n\nError")
+  cat("\nSum of Squares and Product Matrix Error\n" )
+  print(E)
+  cat("Df Error")
+  print(ve)
+  
+  cat("\n\nTotal")
+  cat("\nSum of Squares and Product Matrix Total\n")
+  print(Ha+Hb+Hab+E)
+  cat("Df Total")
+  print(vha+vhb+vhab+ve)
+  
+  cat("\n\nWilk's Lambda\n")
+  print(wilkslambda)
+  cat("\n")
+  
+  tblrangkum<-as.data.frame(cbind(statistik=c("Wilks A","Wilks B","Wilks AB"),FHit=c(Fhitwilksa,Fhitwilksb,Fhitwilksab),FTabel=c(Ftaba,Ftabb,Ftabab)),p.value=c(pvaluewilksa,pvaluewilksb,pvaluewilksab))
+  return(tblrangkum)
+}
+
+
+```
+Melakukan perbandingan hasil running data dengan fungsi m.anova2() terhadap fungsi package.
+
+```{r packagemanova2}
+####                       Run manova (default R)            ####
+
+hasilAB <- manova(cbind(data.anl$V3, data.anl$V4) ~ fa*fb, data=data.anl)
+summary(hasilAB, test="Wilks")
+```
+
+Dapat dilihat dari ketiga nilai Wilks baik dari faktor A (Jumlah ART), faktor B (Pendapatan setahun terakhir), dan interaksi keduanya lebih besar dari nilai tabelnya, shingga dapat disimpulkan pada tingkat signifikansi 5% terdapat cukup bukti untuk mengatakan bahwa ketiganya (jumlah art, pendapatan dan interaksinya) berpergaruh secara signifikan kapada tabungan dan pengeluaran RT.
+
+
+##PCA
+```{r}
+Absenteeism_at_work <- readxl::read_excel(file.choose())
+Absen <- data.frame(Absenteeism_at_work)
+
+# Load data
+cov(Absen)
+
+# log transform 
+log.ab <- log(Absen[, 1:9])
+ab.class <- Absen[, 10]
+cov(log.ab)
+
+x.ab <- Absen[, 1:9]
+
+# apply PCA - scale. = TRUE is highly 
+# advisable, but default is FALSE. 
+ab.pca <- prcomp(x.ab,
+                 center = TRUE,
+                 scale. = TRUE) 
+# plot method
+plot(ab.pca, type = "l")
+
+# summary method
+summary(ab.pca)
+
+```
+
+
+
+
+##Cluster
+```{r}
+library(klaR)
+library(readxl)
+Dataset_Klasifikasi <- read_excel("Tugas Akhir APG/Dataset_Klasifikasi.xlsx")
+data.to.cluster <- Dataset_Klasifikasi[,-10]
+
+
+#Elbow Method untuk mencari jumlah cluster yang optimal
+set.seed(123)
+k.max <- 15 #maksimal ada 15 cluster
+data <- data.to.cluster
+wss <- sapply(1:k.max, 
+              function(k){kmeans(data, k, nstart=50,iter.max = 15 )$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+#Diperoleh jumlah cluster yang cukup baik adalah 5
+
+cluster.results <- kmodes(data.to.cluster[,2:5],5, iter.max = 10, weighted = FALSE)
+cluster.results
+
+```
+
+##Classification
+```{r}
+#rev 1
+Dataset_Klasifikasi <- readxl::read_excel(file.choose())
+Dataset_Klasifikasi$class <- as.factor(Dataset_Klasifikasi$class)
+summary(datatest$class)
+#Preprocessing Data
+datatrain <- Dataset_Klasifikasi[1:3165,]
+datatest <- Dataset_Klasifikasi[3166:4521,]
+labeltrain <- Dataset_Klasifikasi[1:3165, 10]
+labeltest <- datatest$class
+
+
+#### 1. Metode kNN ####
+knn_pred <- class::knn(train = datatrain[,1:9], test = datatest[,1:9], cl =datatrain$class, k=17, prob=TRUE)
+table(labeltest,knn_pred)
+#mean(labeltest==knn_pred)
+confusionMatrix(knn_pred,datatest$class)
+
+#### 2. Metode C50 ####
+c50 <- C50::C5.0(x = datatrain[-10], y = datatrain$class , trials = 20)
+c50_pred <- predict(c50, datatest)
+c50_predprob <- predict(c50, datatest, type = 'prob')[,1]
+table(labeltest,c50_pred)
+#mean(labeltest==c50_pred)
+confusionMatrix(c50_pred,datatest$class)
+
+#### 3.Metode Regresi Logistik ####
+logReg <- caret::train(class~.,data=datatrain, method='glm',family='binomial')
+logReg_pred <- predict(logReg,datatest)
+logRegPredictionprob <- predict(logReg, datatest, type='prob')[1]
+table(logReg_pred, labeltest)
+#mean(logReg_pred==labeltest)
+confusionMatrix(logReg_pred,datatest$class)
+
+#### 4. Metode Random Forest ####
+RandomForest <- randomForest(class ~ ., data = datatrain, ntree = 500, mtry = 3, importance = TRUE)
+RandomForest_pred <- predict(RandomForest, datatest)
+RandomForest_predprob <- predict(RandomForest, datatest, type = "prob")[,1]
+table(labeltest,RandomForest_pred)
+#mean(labeltest==RandomForest_pred)
+confusionMatrix(RandomForest_pred,datatest$class)
+
+#### 5. Naive Bayes ####
+NaiveBayes <- naivebayes::naive_bayes(class ~ ., data = datatrain)
+NaiveBayes_pred <- predict(NaiveBayes, datatest[ , names(datatest) != "class"])
+NaiveBayes_predprob <- predict(NaiveBayes, datatest[ , names(datatest) != "class"], type = "prob")[,1]
+table(labeltest,NaiveBayes_pred)
+#mean(labeltest==NaiveBayes_pred)
+confusionMatrix(NaiveBayes_pred,datatest$class)
+
+
+
+#membandingkan kNN dengan Regresi Logistik
+scores.knn <- attr(knn_pred,"prob")
+scores.NaiveBayes <- NaiveBayes_predprob #pilih
+scores.RandomForest <- RandomForest_predprob #gagal
+scores.C50 <- c50_predprob #pilih
+scores.LogReg <- logRegPredictionprob #kenapa 2
+
+scores <- data.frame(scores.LogReg,
+                     scores.knn,
+                     scores.NaiveBayes,
+                     scores.C50,
+                     scores.RandomForest)
+
+names(scores)<-c("LogReg",
+                 "kNN",
+                 "NBayes",
+                 "C5.0",
+                 "RForest")
+head(scores)
+head(scores.LogReg)
+
+library(hmeasure)
+results <- HMeasure(labeltest,scores)
+summary(results)
+
+```
+
+##Factor Analysis
+```{r}
+#==========================Factor Analysis==========================#
+
+data_fac <- read_excel("C:/Users/user/Downloads/Absenteeism_at_work (1).xls")
+fit <- factanal(data_fac, 3, rotation = "varimax")
+print(fit, digits=2, cutoff=.3, sort=TRUE)
+View(data_fac)
+load <- fit$loadings[,1:2]
+plot(load,type="n")
+text(load,labels=names(mydata),cex=.7)
+text(load,labels=names(data_fac),cex=.7)
+
+
+```
+
+##Canonical Correlation 
+```{r}
+#===============Canonical Correlation Analysis=======================#
+
+data_x <- data_fac[, 1:5]
+data_y <- data_fac[, 6:10]
+ggpairs(data_x)
+ggpairs(data_y)
+
+library("CCA")
+cc1 <- cc(data_x, data_y)
+# display the canonical correlations
+cc1$cor
+cc1[3:4]
+# raw canonical coefficients
+cc1[3:4]
+# compute canonical loadings
+cc2 <- comput(data_x, data_y, cc1)
+# display canonical loadings
+cc2[3:6]
+# tests of canonical dimensions
+ev <- (1 - cc1$cor^2)
+n <- dim(data_x)[1]
+p <- length(data_x)
+q <- length(data_y)
+k <- min(p, q)
+m <- n - 3/2 - (p + q)/2
+
+w <- rev(cumprod(rev(ev)))
+
+# initialize
+d1 <- d2 <- f <- vector("numeric", k)
+
+for (i in 1:k) {
+  s <- sqrt((p^2 * q^2 - 4)/(p^2 + q^2 - 5))
+  si <- 1/s
+  d1[i] <- p * q
+  d2[i] <- m * s - p * q/2 + 1
+  r <- (1 - w[i]^si)/w[i]^si
+  f[i] <- r * d2[i]/d1[i]
+  p <- p - 1
+  q <- q - 1
+}
+
+pv <- pf(f, d1, d2, lower.tail = FALSE)
+(dmat <- cbind(WilksL = w, F = f, df1 = d1, df2 = d2, p = pv))
+
+```
+

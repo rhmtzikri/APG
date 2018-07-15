@@ -1,0 +1,193 @@
+---
+title: "Laporan Tugas Individu"
+author: "Rahmat Zikri"
+date: "July 15, 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Latar Belakang
+
+Lemahnya pertumbuhan ekonomi global menjadi hal yang tidak dapat dihindari. Perlambatan pertumbuhan ekonomi tersebut berimbas pada kondisi ekonomi di seluruh negara. Krisis ekonomi yang terjadi di sejumlah negara maju seperti Amerika Serikat, Eropa, dan Jepang memengaruhi perlambatan ekonomi global.
+
+Drehmann et al. (2012) memaparkan siklus keuangan merupakan suatu kondisi
+dimana kegiatan di sektor keuangan mengalami fase ekspansif yang ditandai dengan
+akselerasi pertumbuhan kredit perbankan dan pembiayaan yang tinggi, kemudian menuju fase kejenuhan (titik puncak atau peak) dan selanjutnya diikuti oleh fase kontraktif yang ditandai dengan terjadinya penurunan pertumbuhan kredit perbankan dan pembiayaan.
+
+## ISSK
+"Sistem Keuangan yang stabil yang mampu mengalokasikan sumber dana dan menyerap kejutan (shock) yang terjadi sehingga dapat mencegah gangguan terhadap kegiatan sektor riil dan sistem keuangan."
+- Bank Indonesia
+
+## Sektor yang Mempengaruhi ISSK
+1. Makroprudensial
+
+Stabilitas Sistem Keuangan dapat dipantau melalui kebijakan makroprudensial, yang bertujuan untuk membatasi tekanan atau risiko secara sistematik secara luas untuk menghindari biaya yang besar bila terjadi instabilitas di sistem keuangan.
+(Borio, 2009.)
+
+2. Mikroprudensial
+
+  Aspek dari sisi mikroprudensial:
+
+  + Capital Adequacy Ratio (CAR)
+  + Net Performing Loan (NPL)
+  + Debt to Equity Ratio (DER)
+  + Return on Assets (ROA)
+  + Loan to Deposit Ration (LDR)
+  + Sensitivitas terhadap risiko pasar
+  
+  *Catatan: Variabel yang mempengaruhi ISSK berbeda di setiap negara tergantung sektor perekonomian yang paling berpengaruh di negara tersebut.*
+
+3. Faktor yang mempengaruhi ISSK di Indonesia
+  
+  - IHSG
+  - Perkembangan Kredit
+  - Kurs
+  - Jumlah uang beredar
+  - Indeks Harga Properti Residensial
+  
+  
+## Gambaran ISSK di Indonesia
+
+Tabel dibawah ini merupakan dataset ISSK di Indonesia
+```{r dataset}
+dataset <- read.csv("ISSK.csv",sep = ";")
+colnames(dataset) = c("No","ISSK",'IHSG','IHPR', "Kredit", "Kurs", "JUB")
+dataset = dataset[,-c(1)]
+head(dataset,10)
+plot(dataset$ISSK,ylab = "ISSK", ylim = c(0,3))
+summary(dataset$ISSK)
+```
+
+Stabilitas Sistem Keuangan di Indonesia sangat berfluktuatif, akan tetapi masih berada di wilayah stabil (yaitu diantara nilai 0.5 s.d. 1.25). Artinya Sistem Keuangan di Indonesia sudah cukup baik, namum perlu dikaji ulang agar tidak berfluktuatif di masa mendatang.
+
+Berdasarkan statistik deskriptif dari 50 observasi ISSK di Indonesia, kita dapat melihat statistik ISSK menunjukkan range yang cukup kecil yaitu 0,54 dengan nilai minimum 0,70 dan nilai maksimum 1,24. Sedangkan rata-rata ISSK untuk semua observasi adalah 0.9652 dan simpangan bakunya 0.14108. Dapat dilihat bahwa stabilitas sistem keuangan di Indonesia masih baik.
+
+## Metode Analisis
+
+Untuk menentukan metode analisis yang tepat, maka langkah awal yang diambil adalah melakukan scatter plot antara ISSK dengan tiap variabel independen.
+
+```{r preanalisis}
+plot(dataset$IHSG, dataset$ISSK,xlab = "IHSG", ylab = "ISSK", pch = 19)
+plot(dataset$IHPR, dataset$ISSK,xlab = "IHPR", ylab = "ISSK", pch = 19)
+plot(dataset$Kredit, dataset$ISSK,xlab = "Kredit", ylab = "ISSK", pch = 19)
+plot(dataset$Kurs, dataset$ISSK,xlab = "Kurs", ylab = "ISSK", pch = 19)
+plot(dataset$JUB, dataset$ISSK,xlab = "JUB", ylab = "ISSK", pch = 19)
+
+reg1 <- summary(lm(dataset$ISSK~dataset$IHSG))
+reg2 <- summary(lm(dataset$ISSK~dataset$IHPR))
+reg3 <- summary(lm(dataset$ISSK~dataset$Kredit))
+reg4 <- summary(lm(dataset$ISSK~dataset$Kurs))
+reg5 <- summary(lm(dataset$ISSK~dataset$JUB))
+
+pvalue1 <- pf(reg1$fstatistic['value'],reg1$fstatistic['numdf'],reg1$fstatistic['dendf'],lower.tail = F)
+pvalue2 <- pf(reg2$fstatistic['value'],reg2$fstatistic['numdf'],reg2$fstatistic['dendf'],lower.tail = F)
+pvalue3 <-pf(reg3$fstatistic['value'],reg3$fstatistic['numdf'],reg3$fstatistic['dendf'],lower.tail = F)
+pvalue4 <- pf(reg4$fstatistic['value'],reg4$fstatistic['numdf'],reg4$fstatistic['dendf'],lower.tail = F)
+pvalue5 <-pf(reg5$fstatistic['value'],reg5$fstatistic['numdf'],reg5$fstatistic['dendf'],lower.tail = F)
+
+
+prmatrix(c(reg1$fstatistic,pvalue1),collab = c(""), rowlab = c("f","df1","df2","p-value"))
+prmatrix(c(reg2$fstatistic,pvalue2),collab = c(""), rowlab = c("f","df1","df2","p-value"))
+prmatrix(c(reg3$fstatistic,pvalue3),collab = c(""), rowlab = c("f","df1","df2","p-value"))
+prmatrix(c(reg4$fstatistic,pvalue4),collab = c(""), rowlab = c("f","df1","df2","p-value"))
+prmatrix(c(reg5$fstatistic,pvalue5),collab = c(""), rowlab = c("f","df1","df2","p-value"))
+
+
+```
+
+Setelah diregresikan dengan masing-masing faktor/variabel bebas untuk mengetahui pengaruhnya dan signifikansi faktor tersebut terhadap ISSK dapat diperhatikan bahwa setiap variabel memiliki pengaruh linier yang cukup kuat, kecuali pada Perkembangan Kredit yang dipengaruhi adanya outlier. Begitu juga dengan R square menunjukkan pengaruh variabel independen yang besar terhadap variabel terikat, kecuali pada Perkembangan Kredit yang diduga dipengaruhi outlier. Jika outlier tersebut dihapus maka statistiknya menjadi sebagai berikut:
+
+```{r olah}
+dataset <- (dataset[-c(40),])
+summary(lm(dataset$ISSK~dataset$Kredit))
+```
+
+
+Dari analisis deskriptif yang telah dilakukan, maka analisis statistika untuk mengetahui faktor yang mempengaruhi perubahan ISSK dan menentukan stabilitas sistem keuangan di Indonesia yang tepat digunakan adalah metode analisis REGRESI LINIER BERGANDA.
+
+## Pengolahan
+
+Setelah dilakukan pengujian, maka model terbaik sebagai berikut:
+
+```{r regresisimultan}
+model = lm(dataset$ISSK~dataset$IHPR+dataset$Kredit+dataset$Kurs+dataset$IHSG)
+summary(lm(dataset$ISSK~dataset$IHPR+dataset$Kredit+dataset$Kurs+dataset$IHSG))
+
+library(car)
+vif(model)
+```
+
+Berdasarkan uji asumsi, salah satu asumsi regresi linier masih dilanggar pada model tersebut, yaitu uji multikolinearitas, dimana VIF dari variabel independen masih ada yang >10, artinya terdapat hubungan antara variabel indepen, sehingga salah satu penyelesaiannya adalah dengan menggunakan PCA.
+
+##PCA
+
+```{r pca}
+prin_comp <- prcomp(dataset, scale. = T)
+#outputs the mean of variables
+prin_comp$center
+
+#principal component loading
+prin_comp$rotation
+
+prin_comp$rotation[1:5,1]
+
+dim(prin_comp$x)
+
+#outputs the standard deviation of variables
+prin_comp$scale
+
+#plot the resultant principal components.
+biplot(prin_comp, scale = 0)
+
+#compute standard deviation of each principal component
+std_dev <- prin_comp$sdev
+
+#compute variance
+pr_var <- std_dev^2
+pr_var[1:10]
+
+#proportion of variance explained
+prop_varex <- pr_var/sum(pr_var)
+prop_varex[1:20]
+
+#scree plot
+plot(prop_varex, xlab = "Principal Component",
+             ylab = "Proportion of Variance Explained",
+             type = "b")
+
+#cumulative scree plot  
+plot(cumsum(prop_varex), xlab = "Principal Component",
+              ylab = "Cumulative Proportion of Variance Explained",
+              type = "b")
+
+library("rpart")
+rasio <- floor(0.7*nrow(dataset))
+train.data <- data.frame(ISSK = dataset$ISSK, prin_comp$x)
+train.data <- train.data[1:rasio,]
+testdata <- dataset[rasio+1:nrow(dataset)-rasio,]
+
+rpart.model <- rpart(ISSK ~ .,data = train.data, method = "anova")
+rpart.model
+
+test.data <- predict(prin_comp, newdata = testdata)
+test.data <- as.data.frame(test.data)
+test.data <- test.data[complete.cases(test.data),]
+
+rpart.prediction <- predict(rpart.model, test.data)
+error <- dataset$ISSK - rpart.prediction
+compare <- cbind(dataset$ISSK,rpart.prediction, error )
+colnames(compare) <- c("ISSK","Pred. ISSK","eror")
+print(compare)
+
+qqnorm(error)
+qqline(error)
+
+qqnorm(cars$speed)
+qqline(cars$speed)
+
+
+```
+
