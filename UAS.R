@@ -23,5 +23,25 @@ pca1 <- principal(cor1, nfactors=3, rotate="varimax")
 pca2 <- principal(cor2, nfactors=3, rotate="varimax")
 
 plot(pca1$Vaccounted[5,], type = "b")
+plot(pca2$Vaccounted[5,], type = "b")
 
 
+
+##SOAL 3
+countryData <- read.csv("CountryData.csv")
+View(countryData)
+
+
+classGDP <- data.frame(countryData$country,as.numeric(countryData$GDPcapita))
+classGDP <- classGDP[complete.cases(classGDP),]
+head(classGDP)
+mcatlab <- c()
+for (i in 1:nrow(classGDP)) {
+  if(classGDP[i,2] > 15000) {
+    mcatlab <- c(mcatlab,"tinggi")
+  } else {
+    mcatlab <- c(mcatlab,"rendah")
+  }
+}
+classGDP <- cbind(classGDP,mcatlab)
+View(classGDP)
